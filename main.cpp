@@ -20,5 +20,6 @@ class User : public Seller, public Customer {
 };
 
 int main() {
-
+//  rabotaem negri 
+	
 }
