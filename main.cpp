@@ -5,6 +5,7 @@
 #include <sstream>
 using namespace std;
 
+// TODO: if have time implement Seller and payment in instalments
 
 // ======================================================================================= //
 
@@ -85,7 +86,6 @@ public:
 		if (position != items.size()) items.erase(position);
 	};
 	*/
-
 	double get_total() const {
 		double result = 0.0;
 		for (int i = 0; i < items.size(); i++) {
@@ -191,9 +191,7 @@ protected:
 
 public:
 	User() {}
-	User(string u, string p) : username(u), password(p) {
-		login();
-	}
+	User(string u, string p) : username(u), password(p) {}
 	
 	virtual string get_username() { return username; }
 	virtual string get_password() { return password; }
@@ -254,10 +252,51 @@ public:
 	Customer(string u, string p) : User(u, p) {}
 
 	void display_menu() override {
-		cout << "\t\t\tUSER PANEL" << endl;
-		cout << "[1] view products" << endl;
-		cout << "[2] view history" << endl;
-		cout << "[3] view balance" << endl;
+		int choice;
+		while (1) {
+			cout << "\t\t\tUSER PANEL" << endl;
+			cout << "[1] View Products" << endl;
+			cout << "[2] View History" << endl;
+			cout << "[3] View Balance" << endl;
+			cout << "[4] Logout" << endl;
+			cout << "$";
+			cin >> choice;
+			switch (choice) {
+			case 1:
+				cout << "\t\t\tPRODUCTS" << endl;
+				cout << "\t\t\tIt is empty here..." << endl << endl;
+				cout << "[1] Add to Cart" << endl;
+				cout << endl;
+				//cout << shop.show();  //or whatever
+				break;
+			case 2:
+				break;
+			case 3:
+				cout << "\t\t\tBALANCE" << endl;
+				wallet.display();
+				cout << "[1] Top up Wallet" << endl;
+				cout << "[2] to Main Menu" << endl;
+				cout << "$";
+				cin >> choice;
+				
+				switch (choice) {
+				case 1:
+					double amount;
+					cout << "Enter the Amount to Top up Your Balance With:";
+					cin >> amount;
+					top_up_balance(amount);
+					break;
+				default:
+				case 2:
+					cout << "Going Back..." << endl;
+					break;
+				}
+				break;
+			case 4:
+				logout();
+				return;
+			}
+		}
 	}
 
 	void add_to_cart(const Product& p) { cart.add_product(p); }
@@ -267,7 +306,10 @@ public:
 		cart.clear();
 	}
 	
-	void top_up_balance(double amount) { wallet.deposit(amount); }
+	void top_up_balance(double amount) {
+		wallet.deposit(amount);
+		wallet.display();
+	}
 	
 	void view_order_history() {}
 	
@@ -298,6 +340,7 @@ class Admin : public User {
 
 class FileHandler {
 private:
+
 	static vector<string> parse(string mess, char delimiter) {
 		vector<string> parsed;
 		stringstream ss(mess);
@@ -338,10 +381,11 @@ public:
 	}
 
 
+
 	static void save_products(const vector<Product>& products, const string& filename) {
 		fstream file;
 		file.open(filename, ios::out, ios::trunc);
-		file << "ID\t\tNAME\t\tQUANTITY\t\tPRICE\t\tDISCOUNT" << endl;
+		file << "ID::NAME::QUANTITY::PRICE::DISCOUNT" << endl;
 		for (int i = 0; i < products.size(); i++) {
 			file << products[i].get_id() << ":"
 				 << products[i].get_name() << ":"
@@ -363,15 +407,16 @@ public:
 		
 		while (getline(file, line)) {
 			vector<string> parsed = parse(line, ':');
-			if (parsed.size() == 5)
+			if (parsed.size() == 5) {
 				result.push_back(Product(parsed[0], parsed[1], stoi(parsed[2]), stoi(parsed[3]), stoi(parsed[4])));
-			else
-				cout << parsed.size() << "some kind of error occured while loading the products!" << endl;
+			}
 		}
 		return result;
 	}
+
+
 	// whatever will rewrite it later
-	static void log_transactions(const Transaction& t, const string& filename) {
+	static void log_transactions(const Transaction& t, const string& filename) { // vector<>
 		fstream file(filename, ios::out, ios::trunc);
 		vector<Product> purchased = t.get_purchased_items();
 
@@ -390,28 +435,46 @@ public:
 
 		file << ":" << t.total_amount() << ":" << t.get_timestamp() << endl;
 	}
-	/*
-	static vector<Transaction> load_transactions(const string& filename) {
+
+	static void load_transactions(const string& filename) {
 		fstream file(filename, ios::in);
 		string line;
-		while (getline(file, line, ',')) {
-			
+		string line_line;
+		string line_line_line;
+		int i = 1;
+		while (getline(file, line, ':')) {
+			stringstream ss(line);
+			while (getline(ss, line_line, '|')) {
+				// cout << line_line << '\n';
+					stringstream ssss(line_line);
+					while (getline(ssss, line_line_line, ','))
+						cout << line_line_line << '\n';
+			}
+			//cout << line << endl;
 		}
 	}
-	*/
 	/*
-	static void generate_receipt(const Transaction& t) {
-	}
+	static void generate_receipt(const Transaction& t) {}
 	*/
 };
+
 // ======================================================================================= //
-/*
-class Shop() {};
-*/
-//
+
+class Shop {};
+
+// ======================================================================================= //
+
 int main() {
-	Customer c1;
-	c1.signin();
-	c1.login();
-	return 0;
+	Product p1("123", "knife", 12, 99.99);
+	Product p2("124", "soap", 15, 9.99);
+	Product p3("125", "shampoo", 18, 45.99);
+
+	vector<Product> purchased;
+	purchased.push_back(p1);
+	purchased.push_back(p2);
+	purchased.push_back(p3);
+
+	Transaction t("TX_1234.txt", "john doe", purchased, "28.04.2025");
+	FileHandler::log_transactions(t, "t.txt");
+	FileHandler::load_transactions("t.txt");
 }
